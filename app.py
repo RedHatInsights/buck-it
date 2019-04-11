@@ -44,11 +44,12 @@ async def store(payload, doc):
     ) as client:
         bucket = BUCKET_MAP[doc["service"]]
         await client.put_object(Bucket=bucket, Key=doc["payload_id"], Body=payload)
+    session.close()
 
 
 async def consumer(client):
     data = await client.getmany()
-    for msg in (msgs for tp, msgs in data.items() if tp.topic == QUEUE):
+    for msg in (msgs for tp, msgs in data.items()):
         doc = json.loads(msg.value)
         payload = await fetch(doc)
         await store(payload, doc)
