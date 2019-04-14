@@ -65,19 +65,12 @@
             ],
             "version": "==3.0.1"
         },
-        "attr": {
-            "hashes": [
-                "sha256:0b1aaddb85bd9e9c4bd75092f4440d6616ff40b0df0437f00771871670f7c9fd",
-                "sha256:9091548058d17f132596e61fa7518e504f76b9a4c61ca7d86e1f96dbf7d4775d"
-            ],
-            "version": "==0.3.1"
-        },
         "attrs": {
             "hashes": [
-                "sha256:69c0dbf2ed392de1cb5ec704444b08a5ef81680a61cb899dc08127123af36a79",
-                "sha256:f0b870f674851ecbfbbbd364d6b5cbdff9dcedbc7f3f5e18a6891057f21fe399"
+                "sha256:10cbf6e27dbce8c30807caf056c8eb50917e0eaafe86347671b57254006c3e69",
+                "sha256:ca4be454458f9dec299268d472aaa5a11f67a4ff70093396e1ceae9c76cf4bbb"
             ],
-            "version": "==19.1.0"
+            "version": "==18.2.0"
         },
         "botocore": {
             "hashes": [
@@ -131,11 +124,11 @@
         },
         "kafkahelpers": {
             "hashes": [
-                "sha256:6cc2a70928452004d7dfc0f43a2b0620473c37387fb5e70d7d4dc0fed7a134c8",
-                "sha256:975fdc2d56a2b01a2df3e0c771d5caf578a2fe1eb1ebe207945c0cfff90f9406"
+                "sha256:0b3a19575aa2dd9303d0287b9b91d8887db8eaf01326991130a6e24b6efd2f30",
+                "sha256:6d30a24687249fb0c689a5196bc8ec87479cf36333e878cbb35a1ddc931f5d6d"
             ],
             "index": "pypi",
-            "version": "==0.0.3"
+            "version": "==0.2.0"
         },
         "multidict": {
             "hashes": [

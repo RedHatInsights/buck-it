@@ -2,13 +2,15 @@ import os
 import json
 import aiohttp
 import aiobotocore
-import aiokafka
 import asyncio
-from kafkahelpers import ReconnectingClient
+from aiokafka import KafkaError
+from collections import deque
+from kafkahelpers import make_pair
 
 loop = asyncio.get_event_loop()
 
 QUEUE = os.environ.get("QUEUE", "platform.upload.buckit")
+RESPONSE_QUEUE = os.environ.get("RESPONSE_QUEUE", "platform.upload.validation")
 BOOT = os.environ.get("KAFKAMQ", "kafka:29092").split(",")
 GROUP = os.environ.get("GROUP", "buckit")
 BUCKET_MAP_FILE = os.environ.get("BUCKET_MAP_FILE")
@@ -22,10 +24,9 @@ try:
 except Exception:
     BUCKET_MAP = {}
 
-kafka_client = aiokafka.AIOKafkaConsumer(
-    QUEUE, loop=loop, bootstrap_servers=BOOT, group_id=GROUP
-)
-client = ReconnectingClient(kafka_client, "reader")
+
+reader, writer = make_pair(QUEUE, GROUP, BOOT)
+produce_queue = deque()
 
 
 async def fetch(doc):
@@ -53,10 +54,31 @@ async def consumer(client):
         doc = json.loads(msg.value)
         payload = await fetch(doc)
         await store(payload, doc)
+        produce_queue.append({"validation": "handoff"})
 
     await asyncio.sleep(0.5)
 
 
+def make_producer(queue=None):
+    queue = produce_queue if queue is None else queue
+
+    async def producer(client):
+        if not queue:
+            await asyncio.sleep(0.1)
+        else:
+            item = queue.popleft()
+            try:
+                await client.send_and_wait(
+                    RESPONSE_QUEUE, json.dumps(item).encode("utf-8")
+                )
+            except KafkaError:
+                queue.append(item)
+                raise
+
+    return producer
+
+
 if __name__ == "__main__":
-    loop.create_task()
+    loop.create_task(reader.run(consumer))
+    loop.create_task(writer.run(make_producer()))
     loop.run_forever()
