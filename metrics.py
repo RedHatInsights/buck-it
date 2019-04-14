@@ -3,7 +3,10 @@ from prometheus_client.exposition import choose_encoder, REGISTRY
 from aiohttp import web
 
 
-s3_writes = Counter("buckit_s3_writes", "Total number of s3 writes")
+bucket_counter = Counter(
+    "buckit_count", "Number of payloads delivered to a bucket", ["bucket_name"]
+)
+payload_size = Summary("buckit_payload_size", "Size in bytes of payloads to store")
 s3_write_time = Summary("buckit_s3_write_time", "Time spend posting payloads to s3")
 
 

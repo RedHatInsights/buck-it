@@ -1,6 +1,5 @@
-from kafka.errors import KafkaError
 from collections import deque
-from kafkahelpers import make_pair
+from kafkahelpers import make_pair, make_producer
 import aiobotocore
 import aiohttp
 import asyncio
@@ -48,7 +47,8 @@ async def store(payload, doc):
         bucket = BUCKET_MAP[doc["service"]]
         with metrics.s3_write_time.time():
             await client.put_object(Bucket=bucket, Key=doc["payload_id"], Body=payload)
-        metrics.s3_writes.inc()
+        metrics.payload_size.observe(len(payload))
+        metrics.bucket_counter(bucket).inc()
     session.close()
 
 
@@ -58,31 +58,17 @@ async def consumer(client):
         doc = json.loads(msg.value)
         payload = await fetch(doc)
         await store(payload, doc)
-        produce_queue.append({"validation": "handoff"})
+        produce_queue.append({"validation": "handoff", "payload_id": doc["payload_id"]})
     await asyncio.sleep(0.5)
 
 
-def make_producer(queue=None):
-    queue = produce_queue if queue is None else queue
-
-    async def producer(client):
-        if not queue:
-            await asyncio.sleep(0.1)
-        else:
-            item = queue.popleft()
-            try:
-                await client.send_and_wait(
-                    RESPONSE_QUEUE, json.dumps(item).encode("utf-8")
-                )
-            except KafkaError:
-                queue.append(item)
-                raise
-
-    return producer
+async def handoff(client, item):
+    await client.send_and_wait(RESPONSE_QUEUE, json.dumps(item).encode("utf-8"))
 
 
 if __name__ == "__main__":
     loop.create_task(reader.run(consumer))
-    loop.create_task(writer.run(make_producer()))
+    c = make_producer(handoff, produce_queue)
+    loop.create_task(writer.run(c))
     metrics.start()
     loop.run_forever()
