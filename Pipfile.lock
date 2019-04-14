@@ -51,6 +51,12 @@
             ],
             "version": "==3.5.4"
         },
+        "aiokafka": {
+            "hashes": [
+                "sha256:25b31f9759427fb9334de5a6224df5ac92247d8af9c13eebf8afddd48a5c05b8"
+            ],
+            "version": "==0.5.1"
+        },
         "async-generator": {
             "hashes": [
                 "sha256:01c7bf666359b4967d2cda0000cc2e4af16a0ae098cbffcb8472fb9e8ad6585b",
@@ -117,18 +123,18 @@
         },
         "kafka-python": {
             "hashes": [
-                "sha256:08f83d8e0af2e64d25f94314d4bef6785b34e3b0df0effe9eebf76b98de66eeb",
-                "sha256:3f55bb3e125764a37da550e9fa3d10a85fa09f8af8f8a40f223d2ec8486c2a5b"
+                "sha256:078acdcd1fc6eddacc46d437c664998b4cf7613b7e79ced66a460965f2648f88",
+                "sha256:0b56f286b674dcb331d80c1d39a01a753cc3acc962bee707da5f207db74f0a26"
             ],
-            "version": "==1.4.6"
+            "version": "==1.4.3"
         },
         "kafkahelpers": {
             "hashes": [
-                "sha256:0b3a19575aa2dd9303d0287b9b91d8887db8eaf01326991130a6e24b6efd2f30",
-                "sha256:6d30a24687249fb0c689a5196bc8ec87479cf36333e878cbb35a1ddc931f5d6d"
+                "sha256:7447c15853da6e0c4f793a91b72226c902d6fdc38aeceef899e7da9dadadd47a",
+                "sha256:a2dd0fd394d0db37d32bac8717e7d73b41d13807d9e58eded8d3528aa4b6c57b"
             ],
             "index": "pypi",
-            "version": "==0.2.0"
+            "version": "==0.2.1"
         },
         "multidict": {
             "hashes": [
