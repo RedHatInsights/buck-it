@@ -131,11 +131,11 @@
         },
         "kafkahelpers": {
             "hashes": [
-                "sha256:1dfe698827159e51750db37c0b2d58ac926671d9f90b10f51b77e0f140bf16fb",
-                "sha256:6362466ec2749fc548627dd53b068d7a23acf6eb0df5fa2408acb581a8255043"
+                "sha256:483975851f854ea9db79d7ee330244f83dbdac6103fa53b54a2b8686c93d1d38",
+                "sha256:561c512b73f419c6b2b1b5e3f26910fc09ccd79981ee189cee57e00543d590cb"
             ],
             "index": "pypi",
-            "version": "==0.3.0"
+            "version": "==0.3.1"
         },
         "multidict": {
             "hashes": [
