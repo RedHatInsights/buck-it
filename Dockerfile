@@ -3,4 +3,6 @@ WORKDIR /usr/src/app
 COPY . .
 RUN pip install pipenv
 RUN pipenv install
-CMD ["pipenv", "run", "python", "./app.py"]
+RUN pipenv run pip freeze > requirements.txt
+RUN pip install -r requirements.txt
+CMD ["python", "./app.py"]
