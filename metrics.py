@@ -21,14 +21,13 @@ def _parse_content_type(content_type):
 async def metrics_handler(request):
     registry = REGISTRY
     encoder, content_type = choose_encoder(request.headers.get("Accept"))
-    print(content_type, _parse_content_type(content_type))
     if "name[]" in request.query:
         registry = registry.restricted_registry(request.query["name[]"])
     try:
         return web.Response(
             content_type=_parse_content_type(content_type), body=encoder(registry)
         )
-    except:
+    except Exception:
         raise web.HTTPInternalServerError("error generating metric output")
 
 
