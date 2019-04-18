@@ -5,8 +5,12 @@ import aiohttp
 import asyncio
 import json
 import os
+import logging
 
 import metrics
+
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 loop = asyncio.get_event_loop()
 
@@ -45,9 +49,11 @@ async def store(payload, doc):
         aws_access_key_id=AWS_ACCESS_KEY_ID,
     ) as client:
         bucket = BUCKET_MAP[doc["category"]]
+        size = len(payload)
+        logger.debug("Storing %s len(%s) into bucket '%s'", doc["payload_id"], size, bucket)
         with metrics.s3_write_time.time():
             await client.put_object(Bucket=bucket, Key=doc["payload_id"], Body=payload)
-        metrics.payload_size.observe(len(payload))
+        metrics.payload_size.observe(size)
         metrics.bucket_counter(bucket).inc()
     session.close()
 
