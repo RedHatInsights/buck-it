@@ -54,11 +54,14 @@ async def store(payload, doc):
 
 async def consumer(client):
     data = await client.getmany()
-    for msg in (msgs for tp, msgs in data.items()):
-        doc = json.loads(msg.value)
-        payload = await fetch(doc)
-        await store(payload, doc)
-        produce_queue.append({"validation": "handoff", "payload_id": doc["payload_id"]})
+    for msgs in (msgs for tp, msgs in data.items()):
+        for msg in msgs:
+            doc = json.loads(msg.value)
+            payload = await fetch(doc)
+            await store(payload, doc)
+            produce_queue.append(
+                {"validation": "handoff", "payload_id": doc["payload_id"]}
+            )
     await asyncio.sleep(0.5)
 
 
