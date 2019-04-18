@@ -42,20 +42,22 @@ async def fetch(doc):
 
 async def store(payload, doc):
     session = aiobotocore.get_session(loop=loop)
-    async with session.create_client(
-        "s3",
-        region_name=AWS_REGION,
-        aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
-        aws_access_key_id=AWS_ACCESS_KEY_ID,
-    ) as client:
-        bucket = BUCKET_MAP[doc["category"]]
-        size = len(payload)
-        logger.debug("Storing %s len(%s) into bucket '%s'", doc["payload_id"], size, bucket)
-        with metrics.s3_write_time.time():
-            await client.put_object(Bucket=bucket, Key=doc["payload_id"], Body=payload)
-        metrics.payload_size.observe(size)
-        metrics.bucket_counter(bucket).inc()
-    session.close()
+    try:
+        async with session.create_client(
+            "s3",
+            region_name=AWS_REGION,
+            aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+            aws_access_key_id=AWS_ACCESS_KEY_ID,
+        ) as client:
+            bucket = BUCKET_MAP[doc["category"]]
+            size = len(payload)
+            logger.info("Storing %s len(%s) into bucket '%s'", doc["payload_id"], size, bucket)
+            with metrics.s3_write_time.time():
+                await client.put_object(Bucket=bucket, Key=doc["payload_id"], Body=payload)
+            metrics.payload_size.observe(size)
+            metrics.bucket_counter(bucket).inc()
+    finally:
+        session.close()
 
 
 async def consumer(client):
