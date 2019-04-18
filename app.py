@@ -37,7 +37,7 @@ async def fetch(doc):
 
 
 async def store(payload, doc):
-    session = aiobotocore.get_session(loop)
+    session = aiobotocore.get_session(loop=loop)
     async with session.create_client(
         "s3",
         region_name=AWS_REGION,
