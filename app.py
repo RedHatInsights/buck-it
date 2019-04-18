@@ -9,7 +9,7 @@ import logging
 
 import metrics
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 loop = asyncio.get_event_loop()
