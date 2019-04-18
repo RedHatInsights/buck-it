@@ -44,7 +44,7 @@ async def store(payload, doc):
         aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
         aws_access_key_id=AWS_ACCESS_KEY_ID,
     ) as client:
-        bucket = BUCKET_MAP[doc["service"]]
+        bucket = BUCKET_MAP[doc["category"]]
         with metrics.s3_write_time.time():
             await client.put_object(Bucket=bucket, Key=doc["payload_id"], Body=payload)
         metrics.payload_size.observe(len(payload))
