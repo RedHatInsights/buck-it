@@ -41,7 +41,7 @@ async def store(payload, doc):
     async with session.create_client(
         "s3",
         region_name=AWS_REGION,
-        aws_secret_key=AWS_SECRET_KEY,
+        aws_secret_access_key=AWS_SECRET_KEY,
         aws_access_key_id=AWS_ACCESS_KEY_ID,
     ) as client:
         bucket = BUCKET_MAP[doc["service"]]
