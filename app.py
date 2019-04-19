@@ -36,9 +36,9 @@ except Exception:
 produce_queue = deque()
 
 
-async def fetch(doc):
+async def fetch(url):
     async with aiohttp.ClientSession() as session:
-        async with session.get(doc["url"]) as response:
+        async with session.get(url) as response:
             return await response.read()
 
 
