@@ -9,18 +9,18 @@ from contextvars import ContextVar
 from functools import partial
 
 from kafkahelpers import make_pair, make_producer
-import metrics
+from buckit import metrics
 
 logging.basicConfig(level=logging.INFO)
 
 
-class ContextFilter(logging.Filter):
-    def filter(record):
-        record.request_id = REQUEST_ID.get()
+def context_filter(record):
+    record.request_id = REQUEST_ID.get()
+    return True
 
 
 logger = logging.getLogger(__name__)
-logger.addFilter(ContextFilter())
+logger.addFilter(context_filter)
 
 loop = asyncio.get_event_loop()
 
@@ -65,29 +65,29 @@ async def store(payload, bucket):
         metrics.bucket_counter.labels(bucket).inc()
 
 
-def unpack(msg):
+def unpack(v, mapping=BUCKET_MAP):
     with metrics.json_loads_time.time():
-        doc = json.loads(msg.value)
+        doc = json.loads(v)
     REQUEST_ID.set(doc["payload_id"])
-    return doc["url"], BUCKET_MAP[doc["category"]]
+    return doc["url"], mapping[doc["category"]]
 
 
-async def consumer(client, fetcher=fetch, storer=store, produce_queue=None):
+async def consumer(client, unpacker=unpack, fetcher=fetch, storer=store, produce_queue=None):
     async for msg in client:
         try:
-            url, bucket = unpack(msg.value)
+            url, bucket = unpacker(msg.value)
         except Exception:
             logger.exception("Failed to unpack msg.value")
             continue
 
         try:
-            payload = await fetch(url)
+            payload = await fetcher(url)
         except Exception:
             logger.exception("Failed to fetch '%s'.", url)
             continue
 
         try:
-            await store(payload, bucket)
+            await storer(payload, bucket)
         except Exception:
             logger.exception("Failed to store to '%s'", bucket)
             continue

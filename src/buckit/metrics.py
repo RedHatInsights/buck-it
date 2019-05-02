@@ -1,6 +1,6 @@
 from prometheus_client import Counter, Summary
 from prometheus_client.exposition import choose_encoder, REGISTRY
-from prometheus_async.io import time  # noqa: F401
+from prometheus_async.aio import time  # noqa: F401
 from aiohttp import web
 
 
