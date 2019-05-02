@@ -1,17 +1,26 @@
-from collections import deque
-from kafkahelpers import make_pair, make_producer
 import aiobotocore
 import aiohttp
 import asyncio
-from contextvars import ContextVar
 import json
-import os
 import logging
+import os
+from collections import deque
+from contextvars import ContextVar
+from functools import partial
 
+from kafkahelpers import make_pair, make_producer
 import metrics
 
 logging.basicConfig(level=logging.INFO)
+
+
+class ContextFilter(logging.Filter):
+    def filter(record):
+        record.request_id = REQUEST_ID.get()
+
+
 logger = logging.getLogger(__name__)
+logger.addFilter(ContextFilter())
 
 loop = asyncio.get_event_loop()
 
@@ -33,15 +42,14 @@ except Exception:
     BUCKET_MAP = {}
 
 
-produce_queue = deque()
-
-
+@metrics.time(metrics.fetch_time)
 async def fetch(url):
     async with aiohttp.ClientSession() as session:
         async with session.get(url) as response:
             return await response.read()
 
 
+@metrics.time(metrics.s3_write_time)
 async def store(payload, bucket):
     session = aiobotocore.get_session(loop=loop)
     async with session.create_client(
@@ -52,26 +60,39 @@ async def store(payload, bucket):
     ) as client:
         size = len(payload)
         logger.info("Storing %s bytes into bucket '%s'", size, bucket)
-        with metrics.s3_write_time.time():
-            await client.put_object(Bucket=bucket, Key=REQUEST_ID.get(), Body=payload)
+        await client.put_object(Bucket=bucket, Key=REQUEST_ID.get(), Body=payload)
         metrics.payload_size.observe(size)
         metrics.bucket_counter.labels(bucket).inc()
 
 
-async def consumer(client):
-    data = await client.getmany()
-    for msgs in (msgs for tp, msgs in data.items()):
-        for msg in msgs:
-            doc = json.loads(msg.value)
-            REQUEST_ID.set(doc["payload_id"])
-            url = doc["url"]
+def unpack(msg):
+    with metrics.json_loads_time.time():
+        doc = json.loads(msg.value)
+    REQUEST_ID.set(doc["payload_id"])
+    return doc["url"], BUCKET_MAP[doc["category"]]
+
+
+async def consumer(client, fetcher=fetch, storer=store, produce_queue=None):
+    async for msg in client:
+        try:
+            url, bucket = unpack(msg.value)
+        except Exception:
+            logger.exception("Failed to unpack msg.value")
+            continue
+
+        try:
             payload = await fetch(url)
-            bucket = BUCKET_MAP[doc["category"]]
+        except Exception:
+            logger.exception("Failed to fetch '%s'.", url)
+            continue
+
+        try:
             await store(payload, bucket)
-            produce_queue.append(
-                {"validation": "handoff", "payload_id": doc["payload_id"]}
-            )
-    await asyncio.sleep(0.5)
+        except Exception:
+            logger.exception("Failed to store to '%s'", bucket)
+            continue
+
+        produce_queue.append({"validation": "handoff", "payload_id": REQUEST_ID.get()})
 
 
 async def handoff(client, item):
@@ -80,7 +101,8 @@ async def handoff(client, item):
 
 if __name__ == "__main__":
     reader, writer = make_pair(QUEUE, GROUP, BOOT)
-    loop.create_task(reader.run(consumer))
+    produce_queue = deque()
+    loop.create_task(reader.run(partial(consumer, produce_queue=produce_queue)))
     c = make_producer(handoff, produce_queue)
     loop.create_task(writer.run(c))
     metrics.start()
