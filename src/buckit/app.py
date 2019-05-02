@@ -72,7 +72,9 @@ def unpack(v, mapping=BUCKET_MAP):
     return doc["url"], mapping[doc["category"]]
 
 
-async def consumer(client, unpacker=unpack, fetcher=fetch, storer=store, produce_queue=None):
+async def consumer(
+    client, unpacker=unpack, fetcher=fetch, storer=store, produce_queue=None
+):
     async for msg in client:
         try:
             url, bucket = unpacker(msg.value)
@@ -99,7 +101,7 @@ async def handoff(client, item):
     await client.send_and_wait(RESPONSE_QUEUE, json.dumps(item).encode("utf-8"))
 
 
-if __name__ == "__main__":
+def main():
     reader, writer = make_pair(QUEUE, GROUP, BOOT)
     produce_queue = deque()
     loop.create_task(reader.run(partial(consumer, produce_queue=produce_queue)))
@@ -107,3 +109,7 @@ if __name__ == "__main__":
     loop.create_task(writer.run(c))
     metrics.start()
     loop.run_forever()
+
+
+if __name__ == "__main__":
+    main()
