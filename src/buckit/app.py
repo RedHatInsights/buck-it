@@ -69,7 +69,7 @@ def unpack(v, mapping=BUCKET_MAP):
     with metrics.json_loads_time.time():
         doc = json.loads(v)
     REQUEST_ID.set(doc["payload_id"])
-    return doc["url"], mapping[doc["category"]]
+    return doc["url"], mapping[doc["category"]], doc
 
 
 async def consumer(
@@ -77,7 +77,7 @@ async def consumer(
 ):
     async for msg in client:
         try:
-            url, bucket = unpacker(msg.value)
+            url, bucket, doc = unpacker(msg.value)
         except Exception:
             logger.exception("Failed to unpack msg.value")
             continue
@@ -94,7 +94,7 @@ async def consumer(
             logger.exception("Failed to store to '%s'", bucket)
             continue
 
-        produce_queue.append({"validation": "handoff", "payload_id": REQUEST_ID.get()})
+        produce_queue.append({"validation": "success", **doc})
 
 
 async def handoff(client, item):
