@@ -18,9 +18,14 @@ def context_filter(record):
     record.request_id = REQUEST_ID.get()
     return True
 
+def spam_filter(record):
+    return not "GET /metrics" in record.msg
+
 
 logger = logging.getLogger(__name__)
 logger.addFilter(context_filter)
+access_logger = logging.getLogger("aiohttp.access")
+access_logger.addFilter(spam_filter)
 
 loop = asyncio.get_event_loop()
 
