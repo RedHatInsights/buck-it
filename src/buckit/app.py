@@ -73,7 +73,7 @@ async def store(payload, bucket):
 def unpack(v, mapping=BUCKET_MAP):
     with metrics.json_loads_time.time():
         doc = json.loads(v)
-    REQUEST_ID.set(doc["payload_id"])
+    REQUEST_ID.set(doc["request_id"])
     return doc["url"], mapping[doc["category"]], doc
 
 
