@@ -110,7 +110,8 @@ def get_key(doc):
         ident = doc["b64_identity"]
         return f"{ident['account_number']}/{ident['system']['cluster_id']}"
     except Exception:
-        return REQUEST_ID
+        logger.exception("Failed to generate a key with identity, falling back to request_id")
+        return REQUEST_ID.get()
 
 
 async def consumer(
