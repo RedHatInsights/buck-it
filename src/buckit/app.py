@@ -107,12 +107,22 @@ def get_key(doc):
     #     "type": "System"
     #   }
     # }
+    key = REQUEST_ID.get()
+
     try:
-        ident = json.loads(base64.b64decode(doc["b64_identity"]))["identity"]
-        return f"{ident['account_number']}/{ident['system']['cluster_id']}"
+        id_doc = json.loads(base64.b64decode(doc["b64_identity"]))
+    except Exception:
+        logger.exception("Failed to load identity doc, falling back to request_id")
+
+    logger.info("Loaded id doc", extra={"id_doc": id_doc})
+
+    try:
+        ident = id_doc["identity"]
+        key = f"{ident['account_number']}/{ident['system']['cluster_id']}"
     except Exception:
         logger.exception("Failed to generate a key with identity, falling back to request_id")
-        return REQUEST_ID.get()
+
+    return key
 
 
 async def consumer(
