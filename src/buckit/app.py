@@ -18,8 +18,9 @@ def context_filter(record):
     record.request_id = REQUEST_ID.get()
     return True
 
+
 def spam_filter(record):
-    return not "GET /metrics" in record.msg
+    return "GET /metrics" not in record.msg
 
 
 logger = logging.getLogger(__name__)
@@ -55,7 +56,7 @@ async def fetch(url):
 
 
 @metrics.time(metrics.s3_write_time)
-async def store(payload, bucket):
+async def store(payload, bucket, doc):
     session = aiobotocore.get_session(loop=loop)
     async with session.create_client(
         "s3",
@@ -64,7 +65,7 @@ async def store(payload, bucket):
         aws_access_key_id=AWS_ACCESS_KEY_ID,
     ) as client:
         size = len(payload)
-        logger.info("Storing %s bytes into bucket '%s'", size, bucket)
+        logger.info("Storing %s bytes into bucket '%s'", size, bucket, extra=doc)
         await client.put_object(Bucket=bucket, Key=REQUEST_ID.get(), Body=payload)
         metrics.payload_size.observe(size)
         metrics.bucket_counter.labels(bucket).inc()
@@ -93,8 +94,10 @@ async def consumer(
             logger.exception("Failed to fetch '%s'.", url)
             continue
 
+        # TODO: create the key based upon the doc
+
         try:
-            await storer(payload, bucket)
+            await storer(payload, bucket, doc)
         except Exception:
             logger.exception("Failed to store to '%s'", bucket)
             continue
