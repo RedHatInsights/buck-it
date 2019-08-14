@@ -5,6 +5,7 @@ import json
 import logging
 import os
 import sys
+import base64
 from collections import deque
 from contextvars import ContextVar
 from functools import partial
@@ -107,7 +108,7 @@ def get_key(doc):
     #   }
     # }
     try:
-        ident = json.loads(doc["b64_identity"])
+        ident = json.loads(base64.b64decode(doc["b64_identity"]))
         return f"{ident['account_number']}/{ident['system']['cluster_id']}"
     except Exception:
         logger.exception("Failed to generate a key with identity, falling back to request_id")
