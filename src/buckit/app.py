@@ -78,7 +78,7 @@ async def store(payload, bucket, doc):
     ) as client:
         size = len(payload)
         logger.info("Storing %s bytes into bucket '%s'", size, bucket, extra=doc)
-        await client.put_object(Bucket=bucket, Key=REQUEST_ID.get(), Body=payload)
+        await client.put_object(Bucket=bucket, Key=get_key(doc), Body=payload)
         metrics.payload_size.observe(size)
         metrics.bucket_counter.labels(bucket).inc()
 
@@ -88,6 +88,29 @@ def unpack(v, mapping=BUCKET_MAP):
         doc = json.loads(v)
     REQUEST_ID.set(doc["request_id"])
     return doc["url"], mapping[doc["service"]], doc
+
+
+def get_key(doc):
+    # {
+    #   "entitlements": {},
+    #   "identity": {
+    #     "internal": {
+    #       "auth_time": 0,
+    #       "auth_type": "uhc-auth",
+    #       "org_id": "6340056"
+    #     },
+    #     "account_number": "1460290",
+    #     "system": {
+    #       "cluster_id": "8203d669-c7c9-429d-b57f-94c6598556db"
+    #     },
+    #     "type": "System"
+    #   }
+    # }
+    try:
+        ident = doc["b64_identity"]
+        return f"{ident['account_number']}/{ident['system']['cluster_id']}"
+    except Exception:
+        return REQUEST_ID
 
 
 async def consumer(
