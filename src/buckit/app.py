@@ -107,7 +107,7 @@ def get_key(doc):
     #   }
     # }
     try:
-        ident = doc["b64_identity"]
+        ident = json.loads(doc["b64_identity"])
         return f"{ident['account_number']}/{ident['system']['cluster_id']}"
     except Exception:
         logger.exception("Failed to generate a key with identity, falling back to request_id")
