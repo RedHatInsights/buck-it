@@ -4,6 +4,7 @@ import asyncio
 import json
 import logging
 import os
+import sys
 from collections import deque
 from contextvars import ContextVar
 from functools import partial
@@ -11,7 +12,6 @@ from functools import partial
 from kafkahelpers import make_pair, make_producer
 from buckit import metrics
 from logstash_formatter import LogstashFormatterV1
-
 
 
 def context_filter(record):
@@ -23,9 +23,20 @@ def spam_filter(record):
     return "GET /metrics" not in record.msg
 
 
+if any("KUBERNETES" in k for k in os.environ):
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setFormatter(LogstashFormatterV1())
+    logging.root.setLevel(os.getenv("LOG_LEVEL", "INFO"))
+    logging.root.addHandler(handler)
+else:
+    logging.basicConfig(
+        level=os.getenv("LOG_LEVEL", "INFO"),
+        format="%(threadName)s %(levelname)s %(name)s - %(message)s"
+    )
+
 logger = logging.getLogger(__name__)
 logger.addFilter(context_filter)
-logger.setFormatter(LogstashFormatterV1())
+
 access_logger = logging.getLogger("aiohttp.access")
 access_logger.addFilter(spam_filter)
 
