@@ -10,8 +10,8 @@ from functools import partial
 
 from kafkahelpers import make_pair, make_producer
 from buckit import metrics
+from logstash_formatter import LogstashFormatterV1
 
-logging.basicConfig(level=logging.INFO)
 
 
 def context_filter(record):
@@ -25,6 +25,7 @@ def spam_filter(record):
 
 logger = logging.getLogger(__name__)
 logger.addFilter(context_filter)
+logger.setFormatter(LogstashFormatterV1())
 access_logger = logging.getLogger("aiohttp.access")
 access_logger.addFilter(spam_filter)
 
@@ -95,6 +96,7 @@ async def consumer(
             continue
 
         # TODO: create the key based upon the doc
+        logger.info("doc is %s", doc)
 
         try:
             await storer(payload, bucket, doc)

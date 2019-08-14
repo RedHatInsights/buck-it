@@ -11,6 +11,7 @@ if __name__ == "__main__":
             "aiokafka",
             "prometheus-client",
             "prometheus_async",
+            "logstash-formatter",
         ],
         entry_points={"console_scripts": "buckit = buckit.app:main"},
         extras_require={"tests": ["coverage", "flake8", "pytest", "pytest-asyncio"]},
