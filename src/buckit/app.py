@@ -9,6 +9,7 @@ import base64
 from collections import deque
 from contextvars import ContextVar
 from functools import partial
+import datetime
 
 from kafkahelpers import make_pair, make_producer
 from buckit import metrics
@@ -114,11 +115,13 @@ def get_key(doc):
     except Exception:
         logger.exception("Failed to load identity doc, falling back to request_id")
 
-    logger.info("Loaded id doc", extra={"id_doc": id_doc})
+    ts = datetime.datetime.utcnow().strftime("%Y%m%d%H%M%S")
 
     try:
         ident = id_doc["identity"]
-        key = f"{ident['account_number']}/{ident['system']['cluster_id']}"
+        org_id = ident["internal"]["org_id"]
+        cluster_id = ident["system"]["cluster_id"]
+        key = f"{org_id}/{cluster_id}/{ts}-{REQUEST_ID.get()}"
     except Exception:
         logger.exception("Failed to generate a key with identity, falling back to request_id")
 
