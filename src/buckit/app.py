@@ -160,12 +160,21 @@ async def handoff(client, item):
     await client.send_and_wait(RESPONSE_QUEUE, json.dumps(item).encode("utf-8"))
 
 
+def crash(fut, name="Unset"):
+    logger.error("The %s loop completed unexepectedly [%s].  Terminating the server.", name, fut)
+    sys.exit(1)
+
+
 def main():
     reader, writer = make_pair(QUEUE, GROUP, BOOT)
     produce_queue = deque()
-    loop.create_task(reader.run(partial(consumer, produce_queue=produce_queue)))
+    consumer_task = loop.create_task(reader.run(partial(consumer, produce_queue=produce_queue)))
+    consumer_task.add_done_callback(partial(crash, name="consumer"))
+
     c = make_producer(handoff, produce_queue)
-    loop.create_task(writer.run(c))
+    producer_task = loop.create_task(writer.run(c))
+    producer_task.add_done_callback(partial(crash, name="producer"))
+
     metrics.start()
     loop.run_forever()
 
