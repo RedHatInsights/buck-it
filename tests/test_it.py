@@ -12,16 +12,18 @@ class Message:
 
 
 def test_unpack():
-    v = json.dumps(
-        {
-            "payload_id": "testing",
-            "url": "https://localhost:8080",
-            "category": "testing",
-        }
-    )
-    url, bucket = app.unpack(v, mapping={"testing": None})
+    orig_doc = {
+        "payload_id": "testing",
+        "url": "https://localhost:8080",
+        "category": "testing",
+        "request_id": "test",
+        "service": "testing",
+    }
+    v = json.dumps(orig_doc)
+    url, bucket, doc = app.unpack(v, mapping={"testing": None})
     assert url == "https://localhost:8080"
     assert bucket is None
+    assert doc == orig_doc
 
 
 def _unpacker(v):
@@ -32,7 +34,7 @@ async def _fetcher(url):
     return "test_data"
 
 
-async def _storer(payload, bucket):
+async def _storer(payload, bucket, doc):
     pass
 
 
@@ -53,7 +55,8 @@ _unpack_with_mapping = partial(app.unpack, mapping={"test": None})
 async def test_consumer():
     q = collections.deque()
     client = asyncio.Queue()
-    msg = Message({"payload_id": "test", "url": "test", "category": "test"})
+    orig_doc = {"request_id": "test", "service": "test", "url": "test", "category": "test"}
+    msg = Message(orig_doc)
     await client.put(msg)
     await app.consumer(
         make_iter(client),
@@ -62,16 +65,15 @@ async def test_consumer():
         storer=_storer,
         produce_queue=q,
     )
-    assert q[0] == {"validation": "handoff", "payload_id": "test"}
+    assert q[0] == {"validation": "success", **orig_doc}
 
 
 @pytest.mark.asyncio
 async def test_fetcher():
     q = collections.deque()
     client = asyncio.Queue()
-    msg = Message(
-        {"payload_id": "test", "url": "https://www.google.com", "category": "test"}
-    )
+    orig_doc = {"request_id": "test", "service": "test", "url": "https://www.google.com", "category": "test"}
+    msg = Message(orig_doc)
     await client.put(msg)
     await app.consumer(
         make_iter(client),
@@ -79,7 +81,7 @@ async def test_fetcher():
         storer=_storer,
         produce_queue=q,
     )
-    assert q[0] == {"validation": "handoff", "payload_id": "test"}
+    assert q[0] == {"validation": "success", **orig_doc}
 
 
 @pytest.mark.parametrize(
