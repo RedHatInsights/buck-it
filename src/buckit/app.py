@@ -44,9 +44,9 @@ access_logger.addFilter(spam_filter)
 
 loop = asyncio.get_event_loop()
 
-AWS_ACCESS_KEY_ID = os.environ.get("AWS_ACCESS_KEY_ID")
-AWS_REGION = os.environ.get("AWS_REGION", "us-east-1")
-AWS_SECRET_ACCESS_KEY = os.environ.get("AWS_SECRET_ACCESS_KEY")
+AWS_ACCESS_KEY_ID = os.environ.get("AWS_ACCESS_KEY_ID").strip()
+AWS_REGION = os.environ.get("AWS_REGION", "us-east-1").strip()
+AWS_SECRET_ACCESS_KEY = os.environ.get("AWS_SECRET_ACCESS_KEY").strip()
 BOOT = os.environ.get("KAFKAMQ", "kafka:29092").split(",")
 BUCKET_MAP_FILE = os.environ.get("BUCKET_MAP_FILE")
 GROUP = os.environ.get("GROUP", "buckit")
@@ -75,7 +75,7 @@ async def store(payload, bucket, doc):
     async with session.create_client(
         "s3",
         region_name=AWS_REGION,
-        aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+        aws_secret_access_key=AWS_SECRET_ACCESS_KEY.strip(),
         aws_access_key_id=AWS_ACCESS_KEY_ID,
     ) as client:
         size = len(payload)
