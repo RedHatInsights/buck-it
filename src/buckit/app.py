@@ -79,8 +79,9 @@ async def store(payload, bucket, doc):
         aws_access_key_id=AWS_ACCESS_KEY_ID,
     ) as client:
         size = len(payload)
-        logger.info("Storing %s bytes into bucket '%s'", size, bucket, extra=doc)
-        await client.put_object(Bucket=bucket, Key=get_key(doc), Body=payload)
+        key = get_key(doc)
+        logger.info("Storing %s bytes into '%s/%s'", size, bucket, key, extra=doc)
+        await client.put_object(Bucket=bucket, Key=key, Body=payload)
         metrics.payload_size.observe(size)
         metrics.bucket_counter.labels(bucket).inc()
 
