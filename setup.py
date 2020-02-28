@@ -7,7 +7,7 @@ if __name__ == "__main__":
         package_dir={"": "src"},
         install_requires=[
             "kafkahelpers >= 0.3.1",
-            "aiobotocore",
+            "aiobotocore <= 0.11.1",
             "aiokafka",
             "prometheus-client",
             "prometheus_async",
